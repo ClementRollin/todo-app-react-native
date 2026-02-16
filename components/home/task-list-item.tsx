@@ -11,6 +11,16 @@ type TaskListItemProps = {
   onDeleteTask: (taskId: string) => void;
 };
 
+function formatDueAt(value: string) {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 export function TaskListItem({ task, onToggleTask, onEditTask, onDeleteTask }: TaskListItemProps) {
   return (
     <View className="flex-row items-center py-2">
@@ -27,7 +37,7 @@ export function TaskListItem({ task, onToggleTask, onEditTask, onDeleteTask }: T
             }`}>
             {task.title}
           </Text>
-          <Text className="mt-0.5 text-xs font-semibold text-slate-500">{task.dueLabel}</Text>
+          <Text className="mt-0.5 text-xs font-semibold text-slate-500">{formatDueAt(task.dueAt)}</Text>
         </Pressable>
 
         <View className="flex-row items-center">

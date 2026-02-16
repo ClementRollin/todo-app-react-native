@@ -1,6 +1,6 @@
 export type TodoTask = {
   id: string;
   title: string;
-  dueLabel: string;
+  dueAt: string;
   completed: boolean;
 };

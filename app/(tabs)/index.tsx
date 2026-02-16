@@ -34,9 +34,18 @@ export default function HomeScreen() {
   const [taskEditorMode, setTaskEditorMode] = useState<'create' | 'edit'>('create');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
-  const [draftDueLabel, setDraftDueLabel] = useState('');
+  const [draftDueAt, setDraftDueAt] = useState(() => new Date());
   const [taskFormError, setTaskFormError] = useState<string | null>(null);
   const greeting = useMemo(() => getGreeting(now), [now]);
+  const sortedTasks = useMemo(
+    () =>
+      [...tasks].sort((a, b) => {
+        const aTime = new Date(a.dueAt).getTime();
+        const bTime = new Date(b.dueAt).getTime();
+        return aTime - bTime;
+      }),
+    [tasks]
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -56,7 +65,7 @@ export default function HomeScreen() {
   const resetTaskEditor = () => {
     setEditingTaskId(null);
     setDraftTitle('');
-    setDraftDueLabel('');
+    setDraftDueAt(new Date());
     setTaskFormError(null);
   };
 
@@ -74,7 +83,7 @@ export default function HomeScreen() {
     setTaskEditorMode('edit');
     setEditingTaskId(task.id);
     setDraftTitle(task.title);
-    setDraftDueLabel(task.dueLabel);
+    setDraftDueAt(new Date(task.dueAt));
     setTaskFormError(null);
     setTaskEditorVisible(true);
   };
@@ -86,7 +95,7 @@ export default function HomeScreen() {
 
   const handleSubmitTaskEditor = () => {
     const normalizedTitle = draftTitle.trim();
-    const normalizedDueLabel = draftDueLabel.trim() || "Aujourd'hui";
+    const normalizedDueAt = draftDueAt.toISOString();
 
     if (!normalizedTitle) {
       setTaskFormError('Le titre est obligatoire.');
@@ -98,7 +107,7 @@ export default function HomeScreen() {
         {
           id: `task-${Date.now()}`,
           title: normalizedTitle,
-          dueLabel: normalizedDueLabel,
+          dueAt: normalizedDueAt,
           completed: false,
         },
         ...previousTasks,
@@ -107,7 +116,7 @@ export default function HomeScreen() {
       setTasks((previousTasks) =>
         previousTasks.map((task) =>
           task.id === editingTaskId
-            ? { ...task, title: normalizedTitle, dueLabel: normalizedDueLabel }
+            ? { ...task, title: normalizedTitle, dueAt: normalizedDueAt }
             : task
         )
       );
@@ -180,18 +189,18 @@ export default function HomeScreen() {
             onDeleteTask={handleDeleteTask}
             onEditTask={handleOpenEditTask}
             onToggleTask={handleToggleTask}
-            tasks={tasks}
+            tasks={sortedTasks}
           />
         </View>
       </View>
 
       <TaskEditorModal
-        dueLabelValue={draftDueLabel}
+        dueAtValue={draftDueAt}
         errorMessage={taskFormError}
         isVisible={isTaskEditorVisible}
         mode={taskEditorMode}
-        onChangeDueLabel={(value) => {
-          setDraftDueLabel(value);
+        onChangeDueAt={(value) => {
+          setDraftDueAt(value);
           if (taskFormError) {
             setTaskFormError(null);
           }
