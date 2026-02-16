@@ -16,7 +16,6 @@ export default function RegistrationScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [avatarUri, setAvatarUri] = useState('');
 
   const isFormValid = useMemo(
     () =>
@@ -50,7 +49,7 @@ export default function RegistrationScreen() {
       lastName: lastName.trim(),
       email: email.trim(),
       password,
-      avatarUri: avatarUri.trim(),
+      avatarUri: '',
     });
 
     if (!result.ok) {
@@ -102,12 +101,6 @@ export default function RegistrationScreen() {
             placeholder="Confirmer le mot de passe"
             secureTextEntry
             value={confirmPassword}
-          />
-          <AuthInput
-            autoCapitalize="none"
-            onChangeText={setAvatarUri}
-            placeholder="URL photo de profil (optionnel)"
-            value={avatarUri}
           />
         </View>
 
