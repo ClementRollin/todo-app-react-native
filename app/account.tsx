@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -29,8 +29,9 @@ function FieldHelp({ text, error = false }: { text: string; error?: boolean }) {
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { profile, updateProfile } = useUser();
-  const initialProfile = useRef(profile).current;
+  const { profile, updateProfile, logout, isAuthenticated, isHydrated } = useUser();
+  const initialProfileRef = useRef(profile);
+  const initialProfile = initialProfileRef.current;
 
   const [firstName, setFirstName] = useState(initialProfile.firstName);
   const [lastName, setLastName] = useState(initialProfile.lastName);
@@ -110,6 +111,12 @@ export default function AccountScreen() {
 
   const hasChanges = changedFields.length > 0;
   const canSave = fieldErrors.length === 0 && hasChanges && !isImageActionLoading;
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isHydrated, router]);
 
   const handlePickFromGallery = async () => {
     if (isImageActionLoading) {
@@ -212,7 +219,7 @@ export default function AccountScreen() {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!hasChanges) {
       setFeedback({
         kind: 'info',
@@ -228,13 +235,24 @@ export default function AccountScreen() {
       return;
     }
 
-    updateProfile({
+    const nextProfile = {
       firstName: trimmedFirstName,
       lastName: trimmedLastName,
       email: trimmedEmail,
       password: hasPasswordChanged ? password : initialProfile.password,
       avatarUri: trimmedAvatarUri,
-    });
+    };
+
+    const result = await updateProfile(nextProfile);
+    if (!result.ok) {
+      setFeedback({
+        kind: 'error',
+        message: result.error ?? "Impossible d'enregistrer les modifications.",
+      });
+      return;
+    }
+
+    initialProfileRef.current = nextProfile;
 
     setPassword('');
     setConfirmPassword('');
@@ -265,8 +283,9 @@ export default function AccountScreen() {
             setSidebarVisible(false);
             router.replace('/(tabs)');
           }}
-          onLogout={() => {
+          onLogout={async () => {
             setSidebarVisible(false);
+            await logout();
             router.replace('/login');
           }}
         />

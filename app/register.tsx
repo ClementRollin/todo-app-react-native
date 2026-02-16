@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
 import { AuthFooterLink } from '@/components/auth/auth-footer-link';
@@ -10,7 +10,7 @@ import { useUser } from '@/contexts/user-context';
 
 export default function RegistrationScreen() {
   const router = useRouter();
-  const { replaceProfile } = useUser();
+  const { isAuthenticated, isHydrated, register } = useUser();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +28,13 @@ export default function RegistrationScreen() {
     [confirmPassword, email, firstName, lastName, password]
   );
 
-  const handleRegister = () => {
+  useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isHydrated, router]);
+
+  const handleRegister = async () => {
     if (!isFormValid) {
       Alert.alert('Champs manquants', 'Merci de remplir tous les champs.');
       return;
@@ -39,13 +45,18 @@ export default function RegistrationScreen() {
       return;
     }
 
-    replaceProfile({
+    const result = await register({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
       password,
       avatarUri: avatarUri.trim(),
     });
+
+    if (!result.ok) {
+      Alert.alert('Inscription impossible', result.error ?? 'Une erreur est survenue.');
+      return;
+    }
 
     router.replace('/(tabs)');
   };

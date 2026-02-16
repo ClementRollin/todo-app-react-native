@@ -9,9 +9,7 @@ import { HomeHeader } from '@/components/home/home-header';
 import { TaskListCard } from '@/components/home/task-list-card';
 import { TaskEditorModal } from '@/components/home/task-editor-modal';
 import { SectionTitle } from '@/components/ui/section-title';
-import { INITIAL_TASKS } from '@/constants/home-data';
 import { useUser } from '@/contexts/user-context';
-import type { TodoTask } from '@/types/task';
 
 function getGreeting(date: Date) {
   const hour = date.getHours();
@@ -26,8 +24,18 @@ function getGreeting(date: Date) {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { profile, fullName } = useUser();
-  const [tasks, setTasks] = useState<TodoTask[]>(INITIAL_TASKS);
+  const {
+    profile,
+    fullName,
+    tasks,
+    isHydrated,
+    isAuthenticated,
+    createTask,
+    updateTask,
+    deleteTask,
+    toggleTask,
+    logout,
+  } = useUser();
   const [now, setNow] = useState(() => new Date());
   const [isSidebarVisible, setSidebarVisible] = useState(false);
   const [isTaskEditorVisible, setTaskEditorVisible] = useState(false);
@@ -54,12 +62,14 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleToggleTask = (taskId: string) => {
-    setTasks((previousTasks) =>
-      previousTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isHydrated, router]);
+
+  const handleToggleTask = async (taskId: string) => {
+    await toggleTask(taskId);
   };
 
   const resetTaskEditor = () => {
@@ -93,7 +103,7 @@ export default function HomeScreen() {
     setTaskFormError(null);
   };
 
-  const handleSubmitTaskEditor = () => {
+  const handleSubmitTaskEditor = async () => {
     const normalizedTitle = draftTitle.trim();
     const normalizedDueAt = draftDueAt.toISOString();
 
@@ -103,23 +113,15 @@ export default function HomeScreen() {
     }
 
     if (taskEditorMode === 'create') {
-      setTasks((previousTasks) => [
-        {
-          id: `task-${Date.now()}`,
-          title: normalizedTitle,
-          dueAt: normalizedDueAt,
-          completed: false,
-        },
-        ...previousTasks,
-      ]);
+      await createTask({
+        title: normalizedTitle,
+        dueAt: normalizedDueAt,
+      });
     } else if (editingTaskId) {
-      setTasks((previousTasks) =>
-        previousTasks.map((task) =>
-          task.id === editingTaskId
-            ? { ...task, title: normalizedTitle, dueAt: normalizedDueAt }
-            : task
-        )
-      );
+      await updateTask(editingTaskId, {
+        title: normalizedTitle,
+        dueAt: normalizedDueAt,
+      });
     }
 
     setTaskEditorVisible(false);
@@ -141,7 +143,7 @@ export default function HomeScreen() {
         text: 'Supprimer',
         style: 'destructive',
         onPress: () => {
-          setTasks((previousTasks) => previousTasks.filter((item) => item.id !== taskId));
+          void deleteTask(taskId);
         },
       },
     ]);
@@ -170,8 +172,9 @@ export default function HomeScreen() {
           onClose={() => setSidebarVisible(false)}
           onOpenAccount={handleOpenAccount}
           onOpenDashboard={() => setSidebarVisible(false)}
-          onLogout={() => {
+          onLogout={async () => {
             setSidebarVisible(false);
+            await logout();
             router.replace('/login');
           }}
         />

@@ -1,12 +1,21 @@
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 
 import { AuthIllustration } from '@/components/auth/auth-illustration';
 import { AuthPrimaryButton } from '@/components/auth/auth-primary-button';
 import { AuthScreenLayout } from '@/components/auth/auth-screen-layout';
+import { useUser } from '@/contexts/user-context';
 
 export default function SplashHomeScreen() {
   const router = useRouter();
+  const { isAuthenticated, isHydrated } = useUser();
+
+  useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isHydrated, router]);
 
   return (
     <AuthScreenLayout>

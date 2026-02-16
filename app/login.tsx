@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 
 import { AuthFooterLink } from '@/components/auth/auth-footer-link';
@@ -11,20 +11,30 @@ import { useUser } from '@/contexts/user-context';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { profile } = useUser();
+  const { isAuthenticated, isHydrated, login } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const isFormValid = useMemo(() => Boolean(email.trim()) && Boolean(password), [email, password]);
 
-  const handleLogin = () => {
+  useEffect(() => {
+    if (isHydrated && isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isHydrated, router]);
+
+  const handleLogin = async () => {
     if (!isFormValid) {
       Alert.alert('Champs manquants', 'Merci de saisir ton email et ton mot de passe.');
       return;
     }
 
-    if (email.trim().toLowerCase() !== profile.email.trim().toLowerCase() || password !== profile.password) {
-      Alert.alert('Identifiants invalides', 'Email ou mot de passe incorrect.');
+    const result = await login({
+      email: email.trim(),
+      password,
+    });
+    if (!result.ok) {
+      Alert.alert('Connexion impossible', result.error ?? 'Email ou mot de passe incorrect.');
       return;
     }
 
