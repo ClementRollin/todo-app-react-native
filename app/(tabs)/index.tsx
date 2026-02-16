@@ -74,11 +74,17 @@ export default function HomeScreen() {
         />
 
         <DashboardSidebar
+          currentScreen="dashboard"
           email={profile.email}
           fullName={fullName}
           isVisible={isSidebarVisible}
           onClose={() => setSidebarVisible(false)}
           onOpenAccount={handleOpenAccount}
+          onOpenDashboard={() => setSidebarVisible(false)}
+          onLogout={() => {
+            setSidebarVisible(false);
+            router.replace('/login');
+          }}
         />
 
         <View className="flex-1 px-6 pb-6 pt-5">
