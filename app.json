@@ -38,6 +38,13 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autoriser l acces aux photos pour choisir une photo de profil.",
+          "cameraPermission": "Autoriser l acces a la camera pour prendre une photo de profil."
+        }
       ]
     ],
     "experiments": {

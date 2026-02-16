@@ -29,7 +29,7 @@ export function AuthPrimaryButton({
       }`}
       disabled={disabled}
       onPress={onPress}>
-      <Text className={`text-xl font-bold ${isPrimary ? 'text-white' : 'text-brand-500'}`}>
+      <Text className={`text-lg font-bold ${isPrimary ? 'text-white' : 'text-brand-500'}`}>
         {label}
       </Text>
     </Pressable>

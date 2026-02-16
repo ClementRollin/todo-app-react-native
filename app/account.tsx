@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 
@@ -17,6 +18,7 @@ export default function AccountScreen() {
   const [email, setEmail] = useState(profile.email);
   const [password, setPassword] = useState(profile.password);
   const [avatarUri, setAvatarUri] = useState(profile.avatarUri);
+  const [isImageActionLoading, setImageActionLoading] = useState(false);
 
   const isFormValid = useMemo(
     () => Boolean(firstName.trim()) && Boolean(lastName.trim()) && Boolean(email.trim()) && Boolean(password),
@@ -41,6 +43,62 @@ export default function AccountScreen() {
     router.back();
   };
 
+  const handlePickFromGallery = async () => {
+    if (isImageActionLoading) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission requise', 'Active la galerie pour choisir une photo de profil.');
+      return;
+    }
+
+    try {
+      setImageActionLoading(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } finally {
+      setImageActionLoading(false);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    if (isImageActionLoading) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission requise', 'Active la camera pour prendre une photo de profil.');
+      return;
+    }
+
+    try {
+      setImageActionLoading(true);
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } finally {
+      setImageActionLoading(false);
+    }
+  };
+
   const fullName = `${firstName} ${lastName}`.trim();
 
   return (
@@ -51,15 +109,23 @@ export default function AccountScreen() {
           <View className="mt-4">
             <UserAvatar imageUri={avatarUri.trim() || undefined} name={fullName} size={88} />
           </View>
+          <View className="mt-4 w-full gap-2">
+            <AuthPrimaryButton
+              disabled={isImageActionLoading}
+              label="Choisir dans la galerie"
+              onPress={handlePickFromGallery}
+              variant="secondary"
+            />
+            <AuthPrimaryButton
+              disabled={isImageActionLoading}
+              label="Prendre une photo"
+              onPress={handleTakePhoto}
+              variant="secondary"
+            />
+          </View>
         </View>
 
         <View className="mt-8 gap-4">
-          <AuthInput
-            autoCapitalize="none"
-            onChangeText={setAvatarUri}
-            placeholder="URL photo de profil"
-            value={avatarUri}
-          />
           <AuthInput
             autoCapitalize="words"
             onChangeText={setFirstName}
