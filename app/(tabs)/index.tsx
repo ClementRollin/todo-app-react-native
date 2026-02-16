@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -7,6 +7,7 @@ import { AnalogClock } from '@/components/home/analog-clock';
 import { DashboardSidebar } from '@/components/home/dashboard-sidebar';
 import { HomeHeader } from '@/components/home/home-header';
 import { TaskListCard } from '@/components/home/task-list-card';
+import { TaskEditorModal } from '@/components/home/task-editor-modal';
 import { SectionTitle } from '@/components/ui/section-title';
 import { INITIAL_TASKS } from '@/constants/home-data';
 import { useUser } from '@/contexts/user-context';
@@ -29,6 +30,12 @@ export default function HomeScreen() {
   const [tasks, setTasks] = useState<TodoTask[]>(INITIAL_TASKS);
   const [now, setNow] = useState(() => new Date());
   const [isSidebarVisible, setSidebarVisible] = useState(false);
+  const [isTaskEditorVisible, setTaskEditorVisible] = useState(false);
+  const [taskEditorMode, setTaskEditorMode] = useState<'create' | 'edit'>('create');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftDueLabel, setDraftDueLabel] = useState('');
+  const [taskFormError, setTaskFormError] = useState<string | null>(null);
   const greeting = useMemo(() => getGreeting(now), [now]);
 
   useEffect(() => {
@@ -46,15 +53,88 @@ export default function HomeScreen() {
     );
   };
 
-  const handleAddTask = () => {
-    setTasks((previousTasks) => [
+  const resetTaskEditor = () => {
+    setEditingTaskId(null);
+    setDraftTitle('');
+    setDraftDueLabel('');
+    setTaskFormError(null);
+  };
+
+  const handleOpenCreateTask = () => {
+    setTaskEditorMode('create');
+    resetTaskEditor();
+    setTaskEditorVisible(true);
+  };
+
+  const handleOpenEditTask = (taskId: string) => {
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+    setTaskEditorMode('edit');
+    setEditingTaskId(task.id);
+    setDraftTitle(task.title);
+    setDraftDueLabel(task.dueLabel);
+    setTaskFormError(null);
+    setTaskEditorVisible(true);
+  };
+
+  const handleCloseTaskEditor = () => {
+    setTaskEditorVisible(false);
+    setTaskFormError(null);
+  };
+
+  const handleSubmitTaskEditor = () => {
+    const normalizedTitle = draftTitle.trim();
+    const normalizedDueLabel = draftDueLabel.trim() || "Aujourd'hui";
+
+    if (!normalizedTitle) {
+      setTaskFormError('Le titre est obligatoire.');
+      return;
+    }
+
+    if (taskEditorMode === 'create') {
+      setTasks((previousTasks) => [
+        {
+          id: `task-${Date.now()}`,
+          title: normalizedTitle,
+          dueLabel: normalizedDueLabel,
+          completed: false,
+        },
+        ...previousTasks,
+      ]);
+    } else if (editingTaskId) {
+      setTasks((previousTasks) =>
+        previousTasks.map((task) =>
+          task.id === editingTaskId
+            ? { ...task, title: normalizedTitle, dueLabel: normalizedDueLabel }
+            : task
+        )
+      );
+    }
+
+    setTaskEditorVisible(false);
+    resetTaskEditor();
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+
+    Alert.alert('Supprimer la tache', `Confirmer la suppression de "${task.title}" ?`, [
       {
-        id: `task-${Date.now()}`,
-        title: `Nouvelle tache ${previousTasks.length + 1}`,
-        dueLabel: "Aujourd'hui",
-        completed: false,
+        text: 'Annuler',
+        style: 'cancel',
       },
-      ...previousTasks,
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: () => {
+          setTasks((previousTasks) => previousTasks.filter((item) => item.id !== taskId));
+        },
+      },
     ]);
   };
 
@@ -94,9 +174,38 @@ export default function HomeScreen() {
 
           <SectionTitle className="mt-6" title="Liste des taches" />
 
-          <TaskListCard className="mt-4" onAddTask={handleAddTask} onToggleTask={handleToggleTask} tasks={tasks} />
+          <TaskListCard
+            className="mt-4"
+            onAddTask={handleOpenCreateTask}
+            onDeleteTask={handleDeleteTask}
+            onEditTask={handleOpenEditTask}
+            onToggleTask={handleToggleTask}
+            tasks={tasks}
+          />
         </View>
       </View>
+
+      <TaskEditorModal
+        dueLabelValue={draftDueLabel}
+        errorMessage={taskFormError}
+        isVisible={isTaskEditorVisible}
+        mode={taskEditorMode}
+        onChangeDueLabel={(value) => {
+          setDraftDueLabel(value);
+          if (taskFormError) {
+            setTaskFormError(null);
+          }
+        }}
+        onChangeTitle={(value) => {
+          setDraftTitle(value);
+          if (taskFormError) {
+            setTaskFormError(null);
+          }
+        }}
+        onClose={handleCloseTaskEditor}
+        onSubmit={handleSubmitTaskEditor}
+        titleValue={draftTitle}
+      />
     </SafeAreaView>
   );
 }

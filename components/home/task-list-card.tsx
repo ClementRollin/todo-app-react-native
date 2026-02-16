@@ -9,10 +9,19 @@ type TaskListCardProps = {
   tasks: TodoTask[];
   onToggleTask: (taskId: string) => void;
   onAddTask: () => void;
+  onEditTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
   className?: string;
 };
 
-export function TaskListCard({ tasks, onToggleTask, onAddTask, className = '' }: TaskListCardProps) {
+export function TaskListCard({
+  tasks,
+  onToggleTask,
+  onAddTask,
+  onEditTask,
+  onDeleteTask,
+  className = '',
+}: TaskListCardProps) {
   return (
     <AppCard className={`pb-4 ${className}`}>
       <View className="mb-4 flex-row items-center justify-between">
@@ -30,7 +39,19 @@ export function TaskListCard({ tasks, onToggleTask, onAddTask, className = '' }:
         contentContainerStyle={{ paddingBottom: 8 }}
         data={tasks}
         keyExtractor={(task) => task.id}
-        renderItem={({ item }) => <TaskListItem onToggleTask={onToggleTask} task={item} />}
+        ListEmptyComponent={
+          <Text className="py-5 text-center text-sm text-slate-500">
+            Aucune tache pour le moment. Ajoute-en une avec le bouton +
+          </Text>
+        }
+        renderItem={({ item }) => (
+          <TaskListItem
+            onDeleteTask={onDeleteTask}
+            onEditTask={onEditTask}
+            onToggleTask={onToggleTask}
+            task={item}
+          />
+        )}
         showsVerticalScrollIndicator
         style={{ maxHeight: 260 }}
       />
