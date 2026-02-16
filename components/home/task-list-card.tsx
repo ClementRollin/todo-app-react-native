@@ -16,13 +16,13 @@ export function TaskListCard({ tasks, onToggleTask, onAddTask, className = '' }:
   return (
     <AppCard className={`pb-4 ${className}`}>
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-2xl font-semibold text-slate-700">Daily Task</Text>
+        <Text className="text-lg font-semibold text-slate-700">Taches du jour</Text>
         <Pressable
-          accessibilityLabel="Add a new task"
-          className="h-11 w-11 items-center justify-center rounded-xl"
+          accessibilityLabel="Ajouter une nouvelle tache"
+          className="h-10 w-10 items-center justify-center rounded-xl"
           hitSlop={8}
           onPress={onAddTask}>
-          <Feather color="#55bdc4" name="plus" size={34} />
+          <Feather color="#55bdc4" name="plus" size={28} />
         </Pressable>
       </View>
 

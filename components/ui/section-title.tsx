@@ -6,5 +6,5 @@ type SectionTitleProps = {
 };
 
 export function SectionTitle({ title, className = '' }: SectionTitleProps) {
-  return <Text className={`text-3xl font-bold text-slate-900 ${className}`}>{title}</Text>;
+  return <Text className={`text-2xl font-bold text-slate-900 ${className}`}>{title}</Text>;
 }
